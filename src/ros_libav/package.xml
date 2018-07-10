@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!--
+@Author: Jose Rojas
+@Date:   2018-07-08T16:13:19-07:00
+@Email:  jrojas@redlinesolutions.co
+@Project: ros-libav-node
+@Last modified by:   jrojas
+@Last modified time: 2018-07-10T09:42:40-07:00
+@License: MIT License
+@Copyright: Copyright @ 2018, Jose Rojas
+-->
+<package format="2">
+  <name>ros_libav</name>
+  <version>0.1.0</version>
+  <description>A simple libav wrapper ROS1 package using PyAV</description>
+  <maintainer email="jrojas@redlinesolutions.co">Jose Rojas</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>av</exec_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

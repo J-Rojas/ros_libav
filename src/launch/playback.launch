@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<!--
+@Author: Jose Rojas
+@Date:   2018-07-10T07:11:27-07:00
+@Email:  jrojas@redlinesolutions.co
+@Project: ros-libav-node
+@Last modified by:   jrojas
+@Last modified time: 2018-07-10T09:43:16-07:00
+@License: MIT License
+@Copyright: Copyright @ 2018, Jose Rojas
+-->
+
+<launch>
+
+    <arg name="record_root"/>
+    <arg name="bagfile" />
+
+    <param name="libav_video_decoder_root_path" value="$(arg record_root)" />
+
+    <include file="$(find ros_libav)/launch/playback.launch"/>
+
+    <node pkg="rosbag" type="play" name="rosbag_player_rgb" args="-l -d 2 $(arg bagfile)"/>
+</launch>

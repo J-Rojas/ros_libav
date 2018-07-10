@@ -1,0 +1,16 @@
+<!--
+@Author: Jose Rojas
+@Date:   2018-07-08T16:41:30-07:00
+@Email:  jrojas@redlinesolutions.co
+@Project: ros-libav-node
+@Last modified by:   jrojas
+@Last modified time: 2018-07-10T09:43:06-07:00
+@License: MIT License
+@Copyright: Copyright @ 2018, Jose Rojas
+-->
+
+<launch>
+    <node pkg="ros_libav" type="screencapture.py" name="libav_screen_capture" >
+      <param name="libav_screen_capture_image_topic" value="rgb" />
+    </node>
+</launch>

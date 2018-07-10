@@ -1,0 +1,17 @@
+<!--
+@Author: Jose Rojas
+@Date:   2018-07-09T09:01:19-07:00
+@Email:  jrojas@redlinesolutions.co
+@Project: ros-libav-node
+@Last modified by:   jrojas
+@Last modified time: 2018-07-10T09:42:52-07:00
+@License: MIT License
+@Copyright: Copyright @ 2018, Jose Rojas
+-->
+
+<launch>
+    <node pkg="ros_libav" type="playback.py" name="libav_video_player" >
+      <param name="libav_video_decoder_stream_topic" value="rgb/stream" />
+      <param name="libav_video_decoder_stream_event_topic" value="rgb/stream/event" />
+    </node>
+</launch>
