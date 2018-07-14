@@ -4,8 +4,8 @@
 # @Date:   2018-07-10T08:20:17-07:00
 # @Email:  jrojas@redlinesolutions.co
 # @Project: ros-libav-node
-# @Last modified by:   Jose Rojas
-# @Last modified time: 2018-07-10T09:07:58-07:00
+# @Last modified by:   jrojas
+# @Last modified time: 2018-07-14T08:49:48-07:00
 # @License: MIT License
 # @Copyright: Copyright @ 2018, Jose Rojas
 
@@ -18,30 +18,46 @@ from std_msgs.msg import String, Header
 from cv_bridge import CvBridge
 from common import Node
 
-class ScreenCapture(Node):
+class Capture(Node):
 
     def __init__(self):
-        rospy.init_node('libav_screen_capture')
+        rospy.init_node('libav_capture')
 
         self.stream = None
         self.output = None
         self.seq_num = 0
 
-        image_topic = self.get_param('libav_screen_capture_image_topic')
-        video_size = self.get_param('libav_screen_capture_video_size', 'vga')
+        image_topic = self.get_param('libav_capture_image_topic')
+        video_size = self.get_param('libav_capture_video_size', 'vga')
+        format = self.get_param('libav_capture_format', 'video4linux2')
+        device = self.get_param('libav_capture_device', '/dev/video0')
+        if device == 0:
+            device = ''
+
+        rospy.logwarn("video_size {}".format(video_size))
 
         self.pub = rospy.Publisher(image_topic, Image, queue_size=1)
 
         self.input = None
-        self.input = video = av.open('', format='x11grab', options={"video_size": video_size})
+        self.input = video = av.open(device, format=format, options={"video_size": video_size})
 
         stream = next(s for s in video.streams if s.type == 'video')
+
+        rospy.on_shutdown(self.on_shutdown)
 
         for packet in video.demux(stream):
             if rospy.is_shutdown():
                 break
-            for frame in packet.decode():
-                self.on_frame(frame)
+            try:
+                for frame in packet.decode():
+                    self.on_frame(frame)
+            except:
+                rospy.logwarn("Error decoding frame")
+
+    def on_shutdown(self):
+        del self.input # dealloc
+        self.input = None
+        rospy.sleep(1)
 
     def on_frame(self, frame):
         if self.pub is not None:
@@ -63,6 +79,6 @@ class ScreenCapture(Node):
 
 if __name__ == '__main__':
     try:
-        ScreenCapture()
+        Capture()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start traffic node.')

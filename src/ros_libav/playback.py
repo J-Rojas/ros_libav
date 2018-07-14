@@ -5,14 +5,14 @@
 # @Email:  jrojas@redlinesolutions.co
 # @Project: ros-libav-node
 # @Last modified by:   jrojas
-# @Last modified time: 2018-07-10T09:49:08-07:00
+# @Last modified time: 2018-07-13T18:51:19-07:00
 # @License: MIT License
 # @Copyright: Copyright @ 2018, Jose Rojas
 
 import av
 import rospy
 import datetime
-from libav_node.msg import Stream, StreamEvent
+from ros_libav.msg import Stream, StreamEvent
 from sensor_msgs.msg import Image
 from std_msgs.msg import String, Header
 from cv_bridge import CvBridge
@@ -42,7 +42,7 @@ class VideoPlayer(Node):
         if msg.event == self.EVENT_START:
             topic = msg.topic
             filename = msg.filename
-            rospy.logwarn("initialize_stream")
+            rospy.loginfo("initialize_stream")
             self.saved_seq_num = -1
             self.output = av.open("{}/{}".format(self.filepath, filename), 'r')
             self.stream = next(s for s in self.output.streams if s.type == 'video')
@@ -58,10 +58,10 @@ class VideoPlayer(Node):
 
     def on_stream_event(self, msg):
         if self.stream is None or self.generator is None:
-            rospy.sleep(0.1)            
+            rospy.sleep(0.1)
         if msg.was_saved:
             frame_index = msg.saved_seq_num
-            rospy.logwarn("frame_index {}, saved_seq_num {}".format(frame_index, self.saved_seq_num))
+            rospy.loginfo("frame_index {}, saved_seq_num {}".format(frame_index, self.saved_seq_num))
             assert frame_index == self.saved_seq_num + 1
             self.saved_seq_num = frame_index
             frame = self.generator.next()

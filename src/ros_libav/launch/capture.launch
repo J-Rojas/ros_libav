@@ -1,0 +1,18 @@
+<!--
+@Author: Jose Rojas
+@Date:   2018-07-08T16:41:30-07:00
+@Email:  jrojas@redlinesolutions.co
+@Project: ros-libav-node
+@Last modified by:   jrojas
+@Last modified time: 2018-07-13T17:14:37-07:00
+@License: MIT License
+@Copyright: Copyright @ 2018, Jose Rojas
+-->
+
+<launch>
+    <node pkg="ros_libav" type="capture.py" name="libav_capture" >
+      <param name="libav_capture_image_topic" value="rgb" />
+      <param name="libav_capture_format" value="video4linux2" />
+      <param name="libav_capture_device" value="/dev/video0" />
+    </node>
+</launch>
