@@ -34,7 +34,7 @@ class Capture(Node):
         if device == 0:
             device = ''
 
-        rospy.logwarn("video_size {}".format(video_size))
+        rospy.loginfo("video_size {}".format(video_size))
 
         self.pub = rospy.Publisher(image_topic, Image, queue_size=1)
 

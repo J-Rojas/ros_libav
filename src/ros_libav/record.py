@@ -88,7 +88,7 @@ class VideoRecorder(Node):
         self.stream = self.output.add_stream(self.codec, self.framerate)
 
         if self.crop is not None or self.vflip is not None or self.hflip is not None:
-            fchain.append(graph.add_buffer(width=iw, height=ih, format='rgb24'))
+            fchain.append(graph.add_buffer(width=iw, height=ih, format=self.pixel_encoding(msg)))
 
         if self.crop is not None:
             fchain.append(graph.add("crop", self.crop))
@@ -192,6 +192,14 @@ class VideoRecorder(Node):
         msg.saved_seq_num = 0
         return msg
 
+    def pixel_encoding(self, msg):
+        encoding = None
+        if msg.encoding == 'rgb8':
+            encoding = 'rgb24'
+        elif msg.encoding == 'bgr8':
+            encoding = 'bgr24'
+        return encoding
+
     def encode_image(self, msg):
 
         # publish cached event messages
@@ -205,11 +213,7 @@ class VideoRecorder(Node):
 
         self.stream_events = []
 
-        encoding = None
-        if msg.encoding == 'rgb8':
-            encoding = 'rgb24'
-
-        frame = av.video.VideoFrame(msg.width, msg.height, encoding)
+        frame = av.video.VideoFrame(msg.width, msg.height, self.pixel_encoding(msg))
         frame.planes[0].update(msg.data)
         if len(self.filter_chain) > 0:
             self.filter_chain[0].push(frame)
