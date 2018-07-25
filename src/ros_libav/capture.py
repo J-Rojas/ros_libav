@@ -23,6 +23,8 @@ class Capture(Node):
     def __init__(self):
         rospy.init_node('libav_capture')
 
+        super(Capture, self).__init__('capture')
+
         self.stream = None
         self.output = None
         self.seq_num = 0
@@ -43,6 +45,8 @@ class Capture(Node):
 
         stream = next(s for s in video.streams if s.type == 'video')
 
+        init_filter = False
+
         rospy.on_shutdown(self.on_shutdown)
 
         for packet in video.demux(stream):
@@ -50,9 +54,13 @@ class Capture(Node):
                 break
             try:
                 for frame in packet.decode():
+                    if init_filter is False:
+                        self.initialize_filter_graph(stream, stream.codec_context.format.name)
+                        init_filter = True
+                    frame = self.process_filter_chain(frame)
                     self.on_frame(frame)
-            except:
-                rospy.logwarn("Error decoding frame")
+            except Exception as e:
+                rospy.logwarn("Error decoding frame: {}".format(e))
 
     def on_shutdown(self):
         del self.input # dealloc

@@ -10,7 +10,6 @@
 # @Copyright: Copyright @ 2018, Jose Rojas
 
 import av
-import av.filter
 import rospy
 import datetime
 from ros_libav.msg import Stream, StreamEvent
@@ -23,6 +22,8 @@ class VideoRecorder(Node):
 
     def __init__(self):
         rospy.init_node('libav_video_recorder', log_level=rospy.INFO)
+
+        super(VideoRecorder, self).__init__('video_encoder')
 
         self.stream = None
         self.output = None
@@ -39,10 +40,7 @@ class VideoRecorder(Node):
         self.filetype = self.get_param('libav_video_encoder_filetype', "mpg")
         self.bitrate = self.get_param('libav_video_encoder_bitrate', 0)
         self.video_size = self.get_param('libav_video_encoder_video_size')
-        self.crop = self.get_param('libav_video_encoder_crop', None)
         self.pixel_format = self.get_param('libav_video_encoder_pixel_format', 'yuv420p')
-        self.vflip = self.get_param('libav_video_encoder_flip_v', None)
-        self.hflip = self.get_param('libav_video_encoder_flip_h', None)
         delay = self.get_param('libav_video_encoder_delay', 0)
 
         self.image_topic = image_topic =  self.get_param('libav_video_encoder_image_topic')
@@ -52,8 +50,6 @@ class VideoRecorder(Node):
         self.timer = rospy.Timer(rospy.Duration(1.0/self.framerate), self.on_timer)
         self.pub_stream = rospy.Publisher(stream_topic, Stream, queue_size=0)
         self.pub_stream_event = rospy.Publisher(stream_event_topic, StreamEvent, queue_size=0)
-        self.filter_chain = []
-        self.filter_graph = av.filter.Graph()
 
         rospy.on_shutdown(self.on_shutdown)
 
@@ -74,42 +70,18 @@ class VideoRecorder(Node):
             time_str = datetime.datetime.fromtimestamp(rospy.get_rostime().to_time()).isoformat().replace(":", "_")
             filename = "{}_{}.{}".format(self.image_topic.replace("/", "_"), time_str, self.filetype)
 
-        graph = self.filter_graph
         # you can enumerate available filters with av.filter.filters_available.
         #print(av.filter.filters_available)
         #
-        fchain = []
-
         ow = iw = msg.width
         oh = ih = msg.height
 
-
         self.output = av.open("{}/{}".format(self.filepath, filename), 'w', options=options)
         self.stream = self.output.add_stream(self.codec, self.framerate)
+        self.stream.width = iw
+        self.stream.height = ih
 
-        if self.crop is not None or self.vflip is not None or self.hflip is not None:
-            fchain.append(graph.add_buffer(width=iw, height=ih, format=self.pixel_encoding(msg)))
-
-        if self.crop is not None:
-            fchain.append(graph.add("crop", self.crop))
-            fchain[-2].link_to(fchain[-1])
-
-            # scale video
-            box = self.crop.split(":")
-            rospy.loginfo('cropping to box {}'.format(box))
-            #options['crop'] = 'iw={}:ih={}:w={}:h={}:x={}:y={}'.format(msg.width, msg.height, box[2], box[3], box[0], box[1])
-            ow = iw = box[0]
-            oh = ih = box[1]
-
-        if self.vflip:
-            fchain.append(graph.add("vflip"))
-            fchain[-2].link_to(fchain[-1])
-            rospy.loginfo('flipping vertically')
-
-        if self.hflip:
-            fchain.append(graph.add("hflip"))
-            fchain[-2].link_to(fchain[-1])
-            rospy.loginfo('flipping horizontally')
+        ow, oh = self.initialize_filter_graph(self.stream, self.pixel_encoding(msg.encoding))
 
         if self.video_size is not None:
             # scale video
@@ -117,12 +89,6 @@ class VideoRecorder(Node):
             rospy.loginfo('scaling to shape {}'.format(shape))
             ow = shape[0]
             oh = shape[1]
-
-        if len(fchain) > 0:
-            fchain.append(graph.add("buffersink"))  # graph must end with buffersink...?
-            fchain[-2].link_to(fchain[-1])
-
-        self.filter_chain = fchain
 
         self.stream.bit_rate = self.bitrate
         self.stream.pix_fmt = self.pixel_format
@@ -192,14 +158,6 @@ class VideoRecorder(Node):
         msg.saved_seq_num = 0
         return msg
 
-    def pixel_encoding(self, msg):
-        encoding = None
-        if msg.encoding == 'rgb8':
-            encoding = 'rgb24'
-        elif msg.encoding == 'bgr8':
-            encoding = 'bgr24'
-        return encoding
-
     def encode_image(self, msg):
 
         # publish cached event messages
@@ -213,11 +171,9 @@ class VideoRecorder(Node):
 
         self.stream_events = []
 
-        frame = av.video.VideoFrame(msg.width, msg.height, self.pixel_encoding(msg))
+        frame = av.video.VideoFrame(msg.width, msg.height, self.pixel_encoding(msg.encoding))
         frame.planes[0].update(msg.data)
-        if len(self.filter_chain) > 0:
-            self.filter_chain[0].push(frame)
-            frame = self.filter_chain[-1].pull()
+        frame = self.process_filter_chain(frame)
         packet = self.stream.encode(frame)
         self.output.mux(packet)
 
