@@ -29,7 +29,7 @@ class VideoRecorder(Node):
         self.output = None
         self.seq_num = 0
         self.saved_seq_num = 0
-        self.last_image = None
+        self.timer_fired = False
         self.stream_events = []
         self.codec = self.get_param('libav_video_encoder_codec', 'libx264')
         self.framerate = self.get_param('libav_video_encoder_framerate', 15)
@@ -138,15 +138,16 @@ class VideoRecorder(Node):
             self.output.close()
 
     def on_image(self, msg):
-        self.last_image = msg
+        if self.stream == None:
+            self.initialize_stream(msg)
+
         self.stream_events.append(self.stream_event())
 
+        if self.timer_fired and len(self.stream_events) > 0:
+            self.encode_image(msg)
+
     def on_timer(self, msg):
-        if self.last_image is not None:
-            if self.stream == None:
-                self.initialize_stream(self.last_image)
-            self.encode_image(self.last_image)
-            self.last_image = None
+        self.timer_fired = True
 
     def stream_event(self):
         msg = StreamEvent()
