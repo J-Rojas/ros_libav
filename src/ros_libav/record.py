@@ -145,6 +145,7 @@ class VideoRecorder(Node):
 
         if self.timer_fired and len(self.stream_events) > 0:
             self.encode_image(msg)
+            self.timer_fired = False
 
     def on_timer(self, msg):
         self.timer_fired = True
